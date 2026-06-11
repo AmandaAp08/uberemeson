@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Corridas — Uber Moto</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #F3F4F6; color: #111; min-height: 100vh; padding: 1rem; }
+  .app { max-width: 720px; margin: 0 auto; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo { width: 40px; height: 40px; border-radius: 50%; background: #1565C0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo i { color: #fff; font-size: 20px; }
+  .title { font-size: 18px; font-weight: 600; color: #111; }
+  .subtitle { font-size: 13px; color: #6B7280; }
+  .nav { display: flex; align-items: center; gap: 8px; }
+  .nav button { background: #fff; border: 1px solid #D1D5DB; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 14px; color: #111; display: flex; align-items: center; }
+  .nav button:hover { background: #F9FAFB; }
+  .month-label { font-size: 15px; font-weight: 600; min-width: 150px; text-align: center; color: #111; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .card { background: #fff; border-radius: 12px; padding: 14px 16px; border: 1px solid #E5E7EB; }
+  .card-label { font-size: 11px; color: #6B7280; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card-value { font-size: 22px; font-weight: 600; }
+  .card-value.blue { color: #1565C0; }
+  .card-value.green { color: #2E7D32; }
+  .card-value.red { color: #C62828; }
+  .card-value.dark { color: #111; }
+  .card-sub { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+
+  .calendar { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; }
+  .cal-head { display: grid; grid-template-columns: repeat(7, 1fr); background: #1565C0; }
+  .cal-head span { text-align: center; padding: 10px 4px; font-size: 12px; font-weight: 600; color: #fff; letter-spacing: 0.03em; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-day { border: 0.5px solid #E5E7EB; min-height: 60px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; cursor: pointer; transition: background 0.15s; }
+  .cal-day:hover:not(.inactive):not(.weekend) { background: #F3F4F6; }
+  .cal-day.inactive { opacity: 0.25; cursor: default; pointer-events: none; }
+  .cal-day.weekend { background: #F9FAFB; cursor: default; }
+  .cal-day.done { background: #E8F5E9; }
+  .cal-day.missed { background: #FFEBEE; }
+  .cal-day.done:hover { background: #C8E6C9; }
+  .cal-day.missed:hover { background: #FFCDD2; }
+  .day-num { font-size: 13px; font-weight: 600; color: #111; margin-bottom: 4px; }
+  .cal-day.weekend .day-num { color: #9CA3AF; }
+  .day-status { font-size: 16px; line-height: 1; }
+  .trip-type { font-size: 9px; color: #9CA3AF; text-align: center; line-height: 1.2; margin-top: 2px; }
+  .cal-day.done .trip-type { color: #2E7D32; }
+  .cal-day.missed .trip-type { color: #C62828; }
+
+  .legend { display: flex; gap: 16px; margin-top: 1rem; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6B7280; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #D1D5DB; }
+
+  .detail-panel { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 1.25rem; margin-top: 1.5rem; }
+  .section-title { font-size: 12px; font-weight: 600; color: #6B7280; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 0.5px solid #E5E7EB; font-size: 14px; color: #374151; }
+  .detail-row:last-child { border-bottom: none; }
+  .total-row { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; margin-top: 6px; border-top: 1.5px solid #E5E7EB; }
+  .total-label { font-size: 15px; font-weight: 600; color: #111; }
+  .total-value { font-size: 24px; font-weight: 700; color: #2E7D32; }
+  .info-badge { font-size: 12px; background: #E3F2FD; color: #1565C0; border-radius: 6px; padding: 3px 8px; font-weight: 500; }
+
+  @media (max-width: 480px) {
+    body { padding: 0.75rem; }
+    .cal-day { min-height: 46px; padding: 4px 2px; }
+    .day-num { font-size: 11px; }
+    .day-status { font-size: 13px; }
+    .trip-type { font-size: 8px; }
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    .month-label { min-width: 120px; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="logo"><i class="ti ti-motorbike"></i></div>
+      <div>
+        <div class="title">Controle de Corridas</div>
+        <div class="subtitle">Contrato Uber Moto — R$ 380,00/mês</div>
+      </div>
+    </div>
+    <div class="nav">
+      <button id="prev"><i class="ti ti-chevron-left"></i></button>
+      <span class="month-label" id="month-label"></span>
+      <button id="next"><i class="ti ti-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="calendar">
+    <div class="cal-head">
+      <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#A5D6A7;border-color:#66BB6A"></div> Realizado</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#FFCDD2;border-color:#EF9A9A"></div> Faltou</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#F9FAFB"></div> Fim de semana / feriado</div>
+  </div>
+
+  <div class="detail-panel">
+    <div class="section-title">Resumo Financeiro</div>
+    <div id="detail-rows"></div>
+    <div class="total-row">
+      <span class="total-label">Valor a pagar</span>
+      <span class="total-value" id="total-value"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CONTRACT = 380;
+  const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const ALL_HOLIDAYS = [
+    '2025-01-01','2025-04-18','2025-04-21','2025-05-01','2025-06-19',
+    '2025-09-07','2025-10-12','2025-11-02','2025-11-15','2025-11-20','2025-12-25',
+    '2026-01-01','2026-02-16','2026-02-17','2026-04-03','2026-04-21',
+    '2026-05-01','2026-06-04','2026-09-07','2026-10-12','2026-11-02',
+    '2026-11-15','2026-11-20','2026-12-25'
+  ];
+
+  let state = JSON.parse(localStorage.getItem('ubermoto_state') || '{}');
+  const now = new Date();
+  let curYear = now.getFullYear();
+  let curMonth = now.getMonth();
+
+  function isHoliday(y, m, d) {
+    return ALL_HOLIDAYS.includes(`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+  }
+
+  function getContractDays(y, m) {
+    const days = new Date(y, m+1, 0).getDate();
+    const morning = [], afternoon = [];
+    for (let d = 1; d <= days; d++) {
+      const dow = new Date(y, m, d).getDay();
+      if (dow === 0 || dow === 6 || isHoliday(y, m, d)) continue;
+      morning.push(d);
+      if (dow >= 1 && dow <= 4) afternoon.push(d);
+    }
+    return { morning, afternoon };
+  }
+
+  function getKey(y, m, d, type) { return `${y}-${m}-${d}-${type}`; }
+
+  function cycle(key) {
+    const cur = state[key] || 'none';
+    state[key] = cur === 'none' ? 'done' : cur === 'done' ? 'missed' : 'none';
+    localStorage.setItem('ubermoto_state', JSON.stringify(state));
+  }
+
+  function render() {
+    const y = curYear, mo = curMonth;
+    document.getElementById('month-label').textContent = `${MONTHS_PT[mo]} ${y}`;
+
+    const totalDays = new Date(y, mo+1, 0).getDate();
+    const firstDow = new Date(y, mo, 1).getDay();
+    const { morning, afternoon } = getContractDays(y, mo);
+    const totalRides = morning.length + afternoon.length;
+
+    let doneCount = 0, missCount = 0;
+    morning.forEach(d => {
+      const sm = state[getKey(y,mo,d,'m')] || 'none';
+      if (sm === 'done') doneCount++;
+      else if (sm === 'missed') missCount++;
+      if (afternoon.includes(d)) {
+        const sa = state[getKey(y,mo,d,'a')] || 'none';
+        if (sa === 'done') doneCount++;
+        else if (sa === 'missed') missCount++;
+      }
+    });
+
+    const valuePerRide = totalRides > 0 ? CONTRACT / totalRides : 0;
+    const discount = missCount * valuePerRide;
+    const finalValue = CONTRACT - discount;
+
+    document.getElementById('cards').innerHTML = `
+      <div class="card">
+        <div class="card-label">Valor mensal</div>
+        <div class="card-value blue">R$ ${CONTRACT.toFixed(2)}</div>
+        <div class="card-sub">${totalRides} corridas previstas</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Realizadas</div>
+        <div class="card-value green">${doneCount}</div>
+        <div class="card-sub">de ${totalRides} corridas</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Faltas</div>
+        <div class="card-value red">${missCount}</div>
+        <div class="card-sub">desconto de R$ ${discount.toFixed(2)}</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Valor final</div>
+        <div class="card-value dark">R$ ${finalValue.toFixed(2)}</div>
+        <div class="card-sub">a pagar este mês</div>
+      </div>
+    `;
+
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+
+    for (let i = 0; i < firstDow; i++) {
+      const el = document.createElement('div');
+      el.className = 'cal-day inactive';
+      grid.appendChild(el);
+    }
+
+    for (let d = 1; d <= totalDays; d++) {
+      const dow = new Date(y, mo, d).getDay();
+      const holiday = isHoliday(y, mo, d);
+      const isMorn = morning.includes(d);
+      const isAft = afternoon.includes(d);
+
+      if (dow === 0 || dow === 6 || holiday) {
+        const el = document.createElement('div');
+        el.className = 'cal-day weekend';
+        el.innerHTML = `<span class="day-num">${d}</span>${holiday ? '<span style="font-size:10px;color:#9CA3AF">Feriado</span>' : ''}`;
+        grid.appendChild(el);
+        continue;
+      }
+
+      const km = getKey(y,mo,d,'m');
+      const ka = getKey(y,mo,d,'a');
+      const sm = state[km] || 'none';
+      const sa = state[ka] || 'none';
+      const allDone = isMorn && sm==='done' && (!isAft || sa==='done');
+      const anyMiss = sm==='missed' || (isAft && sa==='missed');
+
+      const cell = document.createElement('div');
+      cell.className = 'cal-day' + (allDone ? ' done' : anyMiss ? ' missed' : '');
+      cell.setAttribute('role','button');
+      cell.setAttribute('tabindex','0');
+      cell.setAttribute('aria-label', `Dia ${d}, clique para alternar status`);
+
+      const icon = v => v==='done'?'✅':v==='missed'?'❌':'⚪';
+      const statusHtml = icon(sm) + (isAft ? ' ' + icon(sa) : '');
+      const tripLabel = isAft ? 'ida + volta' : 'só ida';
+
+      cell.innerHTML = `<span class="day-num">${d}</span><span class="day-status">${statusHtml}</span><span class="trip-type">${tripLabel}</span>`;
+      cell.addEventListener('click', () => { cycle(km); if (isAft) cycle(ka); render(); });
+      cell.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){e.preventDefault();cell.click();} });
+      grid.appendChild(cell);
+    }
+
+    document.getElementById('detail-rows').innerHTML = `
+      <div class="detail-row"><span>Valor do contrato</span><span>R$ ${CONTRACT.toFixed(2)}</span></div>
+      <div class="detail-row"><span>Total de corridas no mês</span><span>${totalRides}</span></div>
+      <div class="detail-row"><span>Valor por corrida</span><span class="info-badge">R$ ${valuePerRide.toFixed(2)}</span></div>
+      <div class="detail-row"><span>Corridas realizadas</span><span style="color:#2E7D32;font-weight:600">${doneCount}</span></div>
+      <div class="detail-row"><span>Faltas</span><span style="color:#C62828;font-weight:600">${missCount}</span></div>
+      <div class="detail-row"><span>Valor descontado</span><span style="color:#C62828">− R$ ${discount.toFixed(2)}</span></div>
+    `;
+    document.getElementById('total-value').textContent = `R$ ${finalValue.toFixed(2)}`;
+  }
+
+  document.getElementById('prev').addEventListener('click', () => {
+    curMonth--; if (curMonth < 0) { curMonth = 11; curYear--; } render();
+  });
+  document.getElementById('next').addEventListener('click', () => {
+    curMonth++; if (curMonth > 11) { curMonth = 0; curYear++; } render();
+  });
+
+  render();
+</script>
+</body>
+</html>
